@@ -6,7 +6,7 @@
 		"memory":"8gb",
 		"storage":"32gb"
 	},
-		
+
 	"name": "C# (.NET)",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
 	"image": "mcr.microsoft.com/devcontainers/dotnet:8.0-bookworm-slim",
@@ -19,7 +19,7 @@
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	"forwardPorts": [3000,3001],
-	
+
 	// Use 'postCreateCommand' to run commands after the container is created.
 	"postCreateCommand": "dotnet restore albums-api && npm install --prefix album-viewer && dotnet dev-certs https --trust && echo 'Setup complete'",
 	// Configure tool-specific properties.
@@ -30,7 +30,9 @@
 				"github.copilot-chat",
 				"github.copilot",
 				"vue.volar",
-				"ms-dotnettools.csdevkit"
+				"ms-dotnettools.csdevkit",
+				"ms-azuretools.vscode-bicep",
+				"hashicorp.terraform"
 			]
 		}
 	}

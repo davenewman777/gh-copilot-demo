@@ -14,18 +14,39 @@ namespace albums_api.Controllers
     {
         // GET: api/album
         [HttpGet]
-        public IActionResult Get()
+        public IActionResult Get([FromQuery] string? sortBy)
         {
             var albums = Album.GetAll();
 
-            return Ok(albums);
+            var sortedAlbums = sortBy?.ToLowerInvariant() switch
+            {
+                null or "" => albums,
+                "title" => albums.OrderBy(album => album.Title).ToList(),
+                "artist" => albums.OrderBy(album => album.Artist).ToList(),
+                "price" => albums.OrderBy(album => album.Price).ToList(),
+                _ => null
+            };
+
+            if (sortedAlbums is null)
+            {
+                return BadRequest("sortBy must be title, artist, or price.");
+            }
+
+            return Ok(sortedAlbums);
         }
 
         // GET api/<AlbumController>/5
         [HttpGet("{id}")]
         public IActionResult Get(int id)
         {
-            return Ok();
+            var album = Album.GetById(id);
+
+            if (album is null)
+            {
+                return NotFound();
+            }
+
+            return Ok(album);
         }
 
     }

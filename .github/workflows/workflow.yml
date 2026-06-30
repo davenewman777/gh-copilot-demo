@@ -1,0 +1,100 @@
+name: Build and Push Album API
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'albums-api/**'
+      - '.github/workflows/workflow.yml'
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: album-api
+  AKS_NAMESPACE: dev
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set app manifest version
+        run: |
+          find . -name appmanifest.yml -type f -exec sed -i "s/%%VERSION%%/${{ github.run_id }}/g" {} +
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            --file albums-api/Dockerfile \
+            --tag ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.run_id }} \
+            .
+
+      - name: Push Docker image
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.run_id }}
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Set AKS context
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ secrets.AKS_RESOURCE_GROUP }} \
+            --name ${{ secrets.AKS_CLUSTER_NAME }} \
+            --overwrite-existing
+
+      - name: Deploy album API to dev AKS
+        run: |
+          kubectl create namespace ${{ env.AKS_NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
+
+          cat <<EOF | kubectl apply -f -
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: album-api
+            namespace: ${{ env.AKS_NAMESPACE }}
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: album-api
+            template:
+              metadata:
+                labels:
+                  app: album-api
+              spec:
+                containers:
+                  - name: album-api
+                    image: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.run_id }}
+                    ports:
+                      - containerPort: 8080
+          ---
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: album-api
+            namespace: ${{ env.AKS_NAMESPACE }}
+          spec:
+            selector:
+              app: album-api
+            ports:
+              - port: 80
+                targetPort: 8080
+          EOF
+
+          kubectl rollout status deployment/album-api --namespace ${{ env.AKS_NAMESPACE }}

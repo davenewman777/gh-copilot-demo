@@ -62,3 +62,20 @@ resource "null_resource" "docker_api-userprofile" {
     command = "az acr build --image devopsoh/api-userprofile:${local.apiuserprofile_base_image_tag} --registry ${azurerm_container_registry.container_registry.login_server} --build-arg build_version=${local.apiuserprofile_base_image_tag} --file ../../apis/userprofile/Dockerfile ../../apis/userprofile"
   }
 }
+
+# Container Registry
+resource "azurerm_container_registry" "container_registry" {
+  name                = local.container_registry_name
+  resource_group_name = azurerm_resource_group.resource_group.name
+  location            = azurerm_resource_group.resource_group.location
+  sku                 = "Basic"
+}
+
+# Azure Open AI resource
+resource "azurerm_cognitive_services_account" "open_ai" {
+  name                = local.open_ai_name
+  resource_group_name = azurerm_resource_group.resource_group.name
+  location            = azurerm_resource_group.resource_group.location
+  sku_name            = "S0"
+  kind                = "OpenAI"
+}

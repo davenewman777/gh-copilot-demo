@@ -1,1 +1,8 @@
-
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^cd /workspaces/gh-copilot-demo && node -e \"const fs = require\\('fs'\\); const text = fs\\.readFileSync\\('\\.github/workflows/workflow\\.yml', 'utf8'\\); const ok = text\\.includes\\('on:'\\) && text\\.includes\\('push:'\\) && text\\.includes\\('branches:'\\) && text\\.includes\\('jobs:'\\) && text\\.includes\\('docker build'\\) && text\\.includes\\('docker push'\\); if \\(ok\\) \\{ console\\.log\\('workflow structure ok'\\) \\} else \\{ process\\.exit\\(1\\) \\}\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

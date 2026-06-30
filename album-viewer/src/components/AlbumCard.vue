@@ -21,8 +21,8 @@
     </div>
     
     <div class="album-actions">
-      <button class="btn btn-primary">Add to Cart</button>
-      <button class="btn btn-secondary">Preview</button>
+      <button class="btn btn-primary">{{ addToCartLabel }}</button>
+      <button class="btn btn-secondary">{{ previewLabel }}</button>
     </div>
   </div>
 </template>
@@ -32,6 +32,8 @@ import type { Album } from '../types/album'
 
 interface Props {
   album: Album
+  addToCartLabel: string
+  previewLabel: string
 }
 
 defineProps<Props>()

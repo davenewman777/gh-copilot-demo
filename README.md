@@ -1,4 +1,7 @@
-# Github Copilot demo 
+---
+title: GitHub Copilot demo
+description: Demo solution with an album API and album viewer used to explore GitHub Copilot capabilities
+---
 
 ## Demo Scenarios
 
@@ -117,3 +120,73 @@ If you need to change these settings, you can modify:
 ### Alternative: GitHub Codespaces
 
 The easiest way is to open this solution in a GitHub Codespace, or run it locally in a devcontainer. The development environment will be automatically configured for you.
+
+## Deploying to Azure
+
+The album API deployment is automated by the GitHub Actions workflow in
+[`.github/workflows/workflow.yml`](./.github/workflows/workflow.yml). The workflow
+builds the `albums-api` Docker image, pushes it to Docker Hub, and deploys the
+image to the `dev` namespace in an Azure Kubernetes Service cluster.
+
+### Azure deployment prerequisites
+
+Before running the workflow, create these GitHub repository secrets:
+
+- `DOCKERHUB_USERNAME`: Docker Hub username used to push the image
+- `DOCKERHUB_TOKEN`: Docker Hub access token or password
+- `AZURE_CREDENTIALS`: Azure service principal credentials in JSON format
+- `AKS_RESOURCE_GROUP`: Resource group that contains the AKS cluster
+- `AKS_CLUSTER_NAME`: Name of the target AKS cluster
+
+The Azure service principal must have permission to read the AKS cluster and
+deploy Kubernetes resources to it.
+
+### Deploy from GitHub Actions
+
+Use this process to deploy the solution to the dev AKS cluster:
+
+1. Push changes under `albums-api/**` or `.github/workflows/workflow.yml` to the
+   `main` branch.
+2. Open the repository in GitHub.
+3. Go to **Actions**.
+4. Select the **Build and Push Album API** workflow.
+5. Wait for the workflow run to complete.
+
+You can also start the deployment manually from the workflow page by selecting
+**Run workflow**.
+
+The workflow tags each Docker image with the GitHub Actions run ID:
+
+```text
+<dockerhub-username>/album-api:<github-run-id>
+```
+
+After the image is pushed, the workflow connects to AKS and applies the
+`album-api` Kubernetes `Deployment` and `Service` in the `dev` namespace.
+
+### Verify the deployment
+
+After the workflow succeeds, verify the deployment from a terminal that has
+Azure CLI and `kubectl` configured:
+
+```bash
+az aks get-credentials \
+  --resource-group <resource-group> \
+  --name <cluster-name> \
+  --overwrite-existing
+
+kubectl get pods --namespace dev --selector app=album-api
+kubectl get service album-api --namespace dev
+```
+
+If the service is internal, use port forwarding to test the API:
+
+```bash
+kubectl port-forward service/album-api 8080:80 --namespace dev
+```
+
+Then browse to `http://localhost:8080/albums` or run:
+
+```bash
+curl http://localhost:8080/albums
+```

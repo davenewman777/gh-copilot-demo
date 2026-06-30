@@ -33,14 +33,18 @@ import axios from 'axios'
 import AlbumCard from './components/AlbumCard.vue'
 import type { Album } from './types/album'
 
+// Fetch albums from the API
 const albums = ref<Album[]>([])
+// Set up loading and error states
 const loading = ref<boolean>(true)
 const error = ref<string | null>(null)
 
+// Fetch albums when the component is mounted
 const fetchAlbums = async (): Promise<void> => {
   try {
     loading.value = true
     error.value = null
+    // Fetch albums from the API
     const response = await axios.get<Album[]>('/albums')
     albums.value = response.data
   } catch (err) {
@@ -51,6 +55,7 @@ const fetchAlbums = async (): Promise<void> => {
   }
 }
 
+// Fetch albums when the component is mounted
 onMounted(() => {
   fetchAlbums()
 })

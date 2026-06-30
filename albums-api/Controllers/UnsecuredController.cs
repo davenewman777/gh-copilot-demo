@@ -1,58 +1,52 @@
 using Microsoft.Data.SqlClient;
 using System.Data;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 
 namespace UnsecureApp.Controllers
 {
     public class MyController
     {
+        private readonly string connectionString = "";
 
         public string ReadFile(string userInput)
         {
-            using (FileStream fs = File.Open(userInput, FileMode.Open))
+            ArgumentException.ThrowIfNullOrWhiteSpace(userInput);
+
+            using (FileStream fs = File.OpenRead(userInput))
             {
-                byte[] b = new byte[1024];
-                UTF8Encoding temp = new UTF8Encoding(true);
-
-                while (fs.Read(b, 0, b.Length) > 0)
-                {
-                    return temp.GetString(b);
-                }
+                return ReadFile(fs);
             }
-
-            return null;
         }
 
-        public int GetProduct(string productName)
+        public string ReadFile(Stream stream)
         {
-            using (SqlConnection connection = new SqlConnection(connectionString))
-            {
-                SqlCommand sqlCommand = new SqlCommand()
-                {
-                    CommandText = "SELECT ProductId FROM Products WHERE ProductName = '" + productName + "'",
-                    CommandType = CommandType.Text,
-                };
+            using StreamReader reader = new StreamReader(stream, Encoding.UTF8, leaveOpen: true);
+            return reader.ReadToEnd();
+        }
 
-                SqlDataReader reader = sqlCommand.ExecuteReader();
-                return reader.GetInt32(0); 
-            }
+        public int? GetProduct(string productName)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(productName);
+
+            using SqlConnection connection = new SqlConnection(connectionString);
+            using SqlCommand sqlCommand = new SqlCommand(
+                "SELECT ProductId FROM Products WHERE ProductName = @ProductName",
+                connection)
+            {
+                CommandType = CommandType.Text,
+            };
+
+            sqlCommand.Parameters.Add("@ProductName", SqlDbType.NVarChar, 200).Value = productName;
+
+            connection.Open();
+            object? result = sqlCommand.ExecuteScalar();
+
+            return result is null or DBNull ? null : Convert.ToInt32(result);
         }
 
         public void GetObject()
         {
-            try
-            {
-                object o = null;
-                o.ToString();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.ToString());
-            }
-        
+            return;
         }
-
-        private string connectionString = "";
     }
 }
